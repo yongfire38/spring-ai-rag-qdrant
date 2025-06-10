@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring AI RAG 채팅</title>
+    <!-- 마크다운 변환을 위한 marked.js 라이브러리 -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script> -->
+<script src="/js/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background-color: #fff;
+            border-color: #ddd;
+            border-bottom-color: white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 5px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .user-message {
+            background-color: #dcf8c6;
+            margin-left: auto;
+            text-align: right;
+        }
+        .ai-message {
+            background-color: #f0f0f0;
+        }
+        .input-container {
+            display: flex;
+            margin-top: 10px;
+        }
+        .message-input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .send-button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .send-button:hover {
+            background-color: #45a049;
+        }
+        .loading {
+            text-align: center;
+            margin: 10px 0;
+            color: #666;
+        }
+        .admin-panel {
+            margin-top: 30px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+        .admin-button {
+            padding: 8px 15px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .admin-button:hover {
+            background-color: #0b7dda;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Spring AI RAG 채팅</h1>
+        
+        <div class="tabs">
+            <div class="tab active" id="rag-tab" onclick="switchTab('rag')">RAG 채팅</div>
+            <div class="tab" id="simple-tab" onclick="switchTab('simple')">일반 채팅</div>
+        </div>
+        
+        <div class="chat-container" id="chat-container">
+            <!-- 메시지가 여기에 추가됩니다 -->
+        </div>
+        
+        <div class="input-container">
+            <input type="text" class="message-input" id="message-input" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
+            <button class="send-button" onclick="sendMessage()">전송</button>
+        </div>
+        
+        <div class="admin-panel">
+            <h3>관리자 기능</h3>
+            <button class="admin-button" onclick="loadDocuments()">문서 로드</button>
+            <span id="admin-status"></span>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'rag'; // 'rag' 또는 'simple'
+        
+        function switchTab(mode) {
+            currentMode = mode;
+            document.getElementById('rag-tab').classList.remove('active');
+            document.getElementById('simple-tab').classList.remove('active');
+            document.getElementById(mode + '-tab').classList.add('active');
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+        
+        function addMessage(text, isUser) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message');
+            messageDiv.classList.add(isUser ? 'user-message' : 'ai-message');
+            
+            // AI 응답인 경우 HTML로 렌더링, 사용자 메시지는 텍스트로 표시
+            if (isUser) {
+                messageDiv.textContent = text;
+            } else {
+                messageDiv.innerHTML = text;
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const message = input.value.trim();
+            
+            if (message === '') return;
+            
+            // 사용자 메시지 추가
+            addMessage(message, true);
+            input.value = '';
+            
+            // AI 응답을 위한 메시지 div 생성
+            const aiMessageDiv = document.createElement('div');
+            aiMessageDiv.classList.add('message', 'ai-message');
+            document.getElementById('chat-container').appendChild(aiMessageDiv);
+            
+            // 로딩 표시
+            aiMessageDiv.textContent = '...';
+            
+            // 스트리밍 API 엔드포인트 결정
+            const endpoint = currentMode === 'rag' ? '/ai/rag/stream' : '/ai/simple/stream';
+            
+            // EventSource를 사용한 스트리밍 응답 처리
+            const eventSource = new EventSource(`${endpoint}?message=${encodeURIComponent(message)}`);
+            let fullResponse = '';
+            
+            // 메시지 수신 시 처리
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    // 응답 텍스트 추출 및 누적
+                    if (data.result && data.result.output && data.result.output.text) {
+                        const chunk = data.result.output.text;
+                        fullResponse += chunk;
+                        
+                        // 마크다운을 HTML로 변환 (marked.js 사용)
+                        try {
+                            aiMessageDiv.innerHTML = marked.parse(fullResponse);
+                        } catch (markdownError) {
+                            // 마크다운 변환 오류 시 기본 텍스트로 표시
+                            console.error('마크다운 변환 오류:', markdownError);
+                            aiMessageDiv.innerText = fullResponse;
+                        }
+                    }
+                } catch (error) {
+                    console.error('응답 처리 중 오류:', error);
+                }
+                
+                // 스크롤 최하단으로 이동
+                const chatContainer = document.getElementById('chat-container');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            };
+            
+            // 오류 발생 시 처리
+            eventSource.onerror = function(error) {
+                console.error('스트리밍 오류:', error);
+                eventSource.close();
+                
+                // 응답이 비어있는 경우 오류 메시지 표시
+                if (!fullResponse) {
+                    aiMessageDiv.innerHTML = '응답 생성 중 오류가 발생했습니다.';
+                }
+            };
+            
+            // 스트림 완료 시 처리
+            eventSource.addEventListener('complete', function() {
+                eventSource.close();
+            });
+        }
+        
+        function loadDocuments() {
+            const statusElement = document.getElementById('admin-status');
+            statusElement.textContent = '문서 로드 중...';
+            
+            fetch('/api/documents/load', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusElement.textContent = `성공: ${data.count}개 문서가 로드되었습니다.`;
+                } else {
+                    statusElement.textContent = '문서 로드 실패';
+                }
+            })
+            .catch(error => {
+                statusElement.textContent = '오류: ' + error.message;
+            });
+        }
+    </script>
+</body>
+</html>
