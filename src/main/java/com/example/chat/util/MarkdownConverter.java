@@ -5,9 +5,12 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.data.MutableDataSet;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 마크다운을 HTML로 변환하는 유틸리티 클래스
  */
+@Slf4j
 public class MarkdownConverter {
 
     private static final Parser PARSER;
@@ -34,25 +37,25 @@ public class MarkdownConverter {
         }
 
         // 디버깅 로그
-        System.out.println("원본 응답 길이: " + markdown.length());
-        System.out.println("원본 응답 시작: " + markdown.substring(0, Math.min(200, markdown.length())));
-        System.out.println("원본 응답 끝: " + markdown.substring(Math.max(0, markdown.length() - 200)));
+        log.info("원본 응답 길이: " + markdown.length());
+        log.info("원본 응답 시작: " + markdown.substring(0, Math.min(200, markdown.length())));
+        log.info("원본 응답 끝: " + markdown.substring(Math.max(0, markdown.length() - 200)));
 
         // 응답에서 HTML 태그 제거 - 직접 마크다운으로 처리
         if (markdown.contains("<p>") || markdown.contains("</p>") || markdown.contains("<h3>")) {
             markdown = removeHtmlTags(markdown);
-            System.out.println("HTML 태그 제거 후: " + markdown.substring(0, Math.min(100, markdown.length())));
+            log.info("HTML 태그 제거 후: " + markdown.substring(0, Math.min(100, markdown.length())));
         }
 
         // Generation[assistantMessage=AssistantMessage [...] 형태 처리
         if (markdown.contains("Generation[") && markdown.contains("AssistantMessage")) {
-            System.out.println("Generation 형태 발견");
+            log.info("Generation 형태 발견");
 
             // 실제 컨텐츠 추출 - textContent= 부분 찾기
             int contentStart = markdown.indexOf("textContent=");
             if (contentStart != -1) {
                 contentStart += 12; // "textContent=" 길이
-                System.out.println("textContent 발견 위치: " + contentStart);
+                log.info("textContent 발견 위치: " + contentStart);
 
                 // 마지막 부분 찾기 (metadata= 또는 ]], 또는 ]]</p>)
                 int contentEnd = -1;
@@ -63,22 +66,22 @@ public class MarkdownConverter {
 
                 if (metadataIndex != -1) {
                     contentEnd = metadataIndex;
-                    System.out.println("metadata= 마커 발견");
+                    log.info("metadata= 마커 발견");
                 } else if (closeBracketIndex != -1) {
                     contentEnd = closeBracketIndex;
-                    System.out.println("]]</p> 마커 발견");
+                    log.info("]]</p> 마커 발견");
                 } else if (simpleBracketIndex != -1) {
                     contentEnd = simpleBracketIndex;
-                    System.out.println("]] 마커 발견");
+                    log.info("]] 마커 발견");
                 } else if (finishReasonIndex != -1) {
                     contentEnd = finishReasonIndex - 10; // 안전하게 앞쪽으로 약간 여유 두기
-                    System.out.println("finishReason 마커 발견");
+                    log.info("finishReason 마커 발견");
                 }
 
                 if (contentEnd != -1) {
                     markdown = markdown.substring(contentStart, contentEnd);
-                    System.out.println("추출된 컨텐츠 길이: " + markdown.length());
-                    System.out.println("추출된 컨텐츠 시작: " + markdown.substring(0, Math.min(100, markdown.length())));
+                    log.info("추출된 컨텐츠 길이: " + markdown.length());
+                    log.info("추출된 컨텐츠 시작: " + markdown.substring(0, Math.min(100, markdown.length())));
                 }
             }
         }
