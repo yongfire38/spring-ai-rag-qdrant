@@ -13,16 +13,19 @@ import org.springframework.context.annotation.Configuration;
 
 import com.example.chat.service.DocumentService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
 public class RagConfig {
 
     private final DocumentService documentService;
     private final QdrantVectorStore qdrantVectorStore;
+
+    public RagConfig(DocumentService documentService, QdrantVectorStore qdrantVectorStore) {
+        this.documentService = documentService;
+        this.qdrantVectorStore = qdrantVectorStore;
+    }
 
     /**
      * 애플리케이션 시작 시 문서 로드 및 임베딩 저장
