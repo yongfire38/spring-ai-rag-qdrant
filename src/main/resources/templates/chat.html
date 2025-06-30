@@ -137,7 +137,7 @@
         
         <div class="input-container">
             <input type="text" class="message-input" id="message-input" placeholder="메시지를 입력하세요..." onkeypress="handleKeyPress(event)">
-            <button class="send-button" onclick="sendMessage()">전송</button>
+            <button class="send-button" id="send-btn" onclick="sendMessage()">전송</button>
         </div>
         
         <div class="admin-panel">
@@ -183,8 +183,12 @@
         function sendMessage() {
             const input = document.getElementById('message-input');
             const message = input.value.trim();
+            const sendBtn = document.getElementById('send-btn');
             
             if (message === '') return;
+
+            // 버튼 비활성화
+            sendBtn.disabled = true;
             
             // 사용자 메시지 추가
             addMessage(message, true);
@@ -242,11 +246,17 @@
                 if (!fullResponse) {
                     aiMessageDiv.innerHTML = '응답 생성 중 오류가 발생했습니다.';
                 }
+
+                // 버튼 활성화
+                sendBtn.disabled = false;
             };
             
             // 스트림 완료 시 처리
             eventSource.addEventListener('complete', function() {
                 eventSource.close();
+
+                // 버튼 활성화
+                sendBtn.disabled = false;
             });
         }
         
