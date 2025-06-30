@@ -19,19 +19,11 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class RagConfig {
 
-    private final DocumentService documentService;
-    private final QdrantVectorStore qdrantVectorStore;
-
-    public RagConfig(DocumentService documentService, QdrantVectorStore qdrantVectorStore) {
-        this.documentService = documentService;
-        this.qdrantVectorStore = qdrantVectorStore;
-    }
-
     /**
      * 애플리케이션 시작 시 문서 로드 및 임베딩 저장
      */
     @Bean
-    public CommandLineRunner loadDocuments() {
+    public CommandLineRunner loadDocuments(DocumentService documentService) {
         return args -> {
             log.info("RAG 시스템 초기화 시작");
             int count = documentService.loadDocuments();
@@ -43,14 +35,14 @@ public class RagConfig {
      * RAG Advisor 설정
      */
     @Bean
-    public Advisor retrievalAugmentationAdvisor() {
+    public Advisor retrievalAugmentationAdvisor(QdrantVectorStore qdrantVectorStore) {
         return RetrievalAugmentationAdvisor.builder()
                 .documentRetriever(VectorStoreDocumentRetriever.builder()
-                        .similarityThreshold((double) 0.60f)
+                        .similarityThreshold(0.60)
                         .vectorStore(qdrantVectorStore)
                         .build())
                 .queryAugmenter(ContextualQueryAugmenter.builder()
-                        .allowEmptyContext(true) // 빈 컨텍스트 허용
+                        .allowEmptyContext(true)
                         .build())
                 .build();
     }
