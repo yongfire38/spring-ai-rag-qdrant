@@ -20,7 +20,7 @@
 ## 사전 준비
 
 1. [Ollama](https://ollama.com/download) 설치
-2. [Huggingface](https://huggingface.co/) 에서 PC 스펙에 적합한 GGUF 모델을 준비. 완료된 모델 명은 `application.properties` 파일의 `ollama.model-name`에 설정한다.
+2. [Huggingface](https://huggingface.co/) 에서 PC 스펙에 적합한 GGUF 모델을 준비. 완료된 모델 명은 `application.properties` 파일의 `spring.ai.ollama.chat.model`에 설정한다.
 3. `\src\main\resources\data` 경로에 디폴트 문서가 존재하나, 다른 md 파일로 대체도 가능
 4. `docker-compose.yml` 을 사용해 `docker compose up -d`로 docker container 기반의 Qdrant DB 설정을 해 둔다.
 
@@ -63,7 +63,7 @@ optimum-cli export onnx -m jhgan/ko-sroberta-multitask .
 ## 실행
 
 1. 애플리케이션 실행 후 도큐먼트 생성 및 임베딩, 적재가 실행된다. 수동으로 실행하려면 메인 화면의 `문서 로드` 버튼을 클릭한다.
-2. `http://localhost:8001/` 에서 데이터 확인이 가능하다.
+2. `http://localhost:6333/dashboard` 에서 데이터 확인이 가능하다.
 3. 메인 화면의 `RAG 채팅 모드`, `일반 채팅 모드` 버튼으로 RAG가 적용된 질의 답변, 일반적인 질의 답변을 받을 수 있다.
 
 
